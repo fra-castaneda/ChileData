@@ -273,17 +273,15 @@ SeaLevel <-  function(Operator=59, Time=0.5, ID='',plot=FALSE){
     if(plot){
       SLM_plot<- app_data$df %>%
         dplyr::rename(Fecha = 6) %>%
-        tidyr::gather(key=var, value=value, -time_utc, -Estacion, -Codigo, -Fecha)
+        tidyr::gather(key=Variable, value=value, -time_utc, -Estacion, -Codigo, -Fecha)
+      SLM_plot$value <- as.numeric(SLM_plot$value)
+      SLM_median <- median(SLM_plot$value)
 
-      SLM_plot$var <- factor(SLM_plot$var, levels = c("rad_m", "prs_m"))
+      SLM_plot <- SLM_plot %>% mutate(Metros = value-SLM_median)
 
+      SLM_plot$Variable <- factor(SLM_plot$Variable, levels = c("rad_m", "prs_m"))
 
-      # min_y <- min(SLM_plot$value)
-      # max_y <- max(SLM_plot$value)
-      # interval_size <- (max_y - min_y) / 5 # Example: 5 intervals
-
-
-      app_data$plot<- ggplot(SLM_plot, aes(x=Fecha, y=value, color=var, shape=var)) +
+      app_data$plot<- ggplot(SLM_plot, aes(x=Fecha, y=Metros, color=Variable, shape=var)) +
         ggplot2::geom_point() +
         ggplot2::scale_color_manual(values=c('#CC0000','#66FF00'))
 
