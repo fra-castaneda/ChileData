@@ -1,16 +1,17 @@
 Package: ChileData
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Data gathering for chilean waters 
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Francisco", "Castañeda",
+      email = "fra.castaneda@gmail.com",
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: Collects relevant data for aquaculture and marine research from NOAA, NASA and UNESCO.
+
+    
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
