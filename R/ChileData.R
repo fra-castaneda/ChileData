@@ -209,15 +209,38 @@ iloc_slm <- function(operator=59, Time=0.5){
 }
 
 
-SeaLevel <-  function(urls){
+SeaLevel <-  function(Operator=59, Time=0.5, ID=''){
   require(dplyr)
   require(rvest)
   require(lubridate)
   require(stringr)
 
+
+  url <- paste0('https://www.ioc-sealevelmonitoring.org/list.php?order=delay&dir=asc&showall=all&operator=', Operator)
+
+
+  urls <-read_html(url)
+  urls_df <- urls %>%
+    html_nodes("table")%>%
+    html_table() %>% .[[7]]%>%
+    .[-(1:2), ] %>% select(1:6|9:10)
+
+
+  colnames(urls_df) <-as.character(as.vector(urls_df[1,]))
+  urls_df = urls_df[-1,]
+  urls_df <- urls_df %>%
+    mutate( url = paste0('https://www.ioc-sealevelmonitoring.org/bgraph.php?code=',Code,'&output=tab&period=', Time)) %>%
+    filter(!grepl('d', Delay)) %>% filter(!Delay == "")
+
+  if(!ID ==''){
+    urls_df <- urls_df %>% filter(Code == ID)
+  }
+
+
+
   estacion_df <- tibble()
 
-
+  urls<- urls_df$url
 
   for (url in urls){
 
@@ -233,8 +256,8 @@ SeaLevel <-  function(urls){
       janitor::clean_names() %>%
       mutate(Estacion = estacion_texto,
              Codigo = code_value <- str_extract(url, "(?<=code=)[^&]+"))    %>%
-    mutate(time_utc = ymd_hms(time_utc, tz = "UTC"),
-           `Time (Chile)` = with_tz(time_utc, tzone = "America/Santiago"))
+      mutate(time_utc = ymd_hms(time_utc, tz = "UTC"),
+             `Time (Chile)` = with_tz(time_utc, tzone = "America/Santiago"))
 
     if(ncol(estacion_df_) ==6){
 
@@ -242,16 +265,15 @@ SeaLevel <-  function(urls){
         estacion_df <- rbind(estacion_df, estacion_df_)
       }
 
-
-
-
     }
 
   }
 
+
   return(estacion_df)
 
 }
+
 
 
 
