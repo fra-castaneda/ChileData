@@ -209,12 +209,12 @@ iloc_slm <- function(operator=59, Time=0.5){
 }
 
 
-SeaLevel <-  function(Operator=59, Time=0.5, ID=''){
+SeaLevel <-  function(Operator=59, Time=0.5, ID='',plot=FALSE){
   require(dplyr)
   require(rvest)
   require(lubridate)
   require(stringr)
-
+  app_data <- list()
 
   url <- paste0('https://www.ioc-sealevelmonitoring.org/list.php?order=delay&dir=asc&showall=all&operator=', Operator)
 
@@ -234,11 +234,12 @@ SeaLevel <-  function(Operator=59, Time=0.5, ID=''){
 
   if(!ID ==''){
     urls_df <- urls_df %>% filter(Code == ID)
+
   }
 
 
 
-  estacion_df <- tibble()
+  app_data$df <- tibble()
 
   urls<- urls_df$url
 
@@ -249,7 +250,7 @@ SeaLevel <-  function(Operator=59, Time=0.5, ID=''){
       html_node("th") %>%
       html_text()
     estacion_texto <- sub("Tide gauge at ", "", text_content)
-    estacion_df_ <- estacion %>%
+    app_data$df_ <- estacion %>%
       html_nodes("table") %>%
       html_table() %>% .[[1]] %>%
       janitor::row_to_names(row_number = 1) %>%
@@ -259,18 +260,38 @@ SeaLevel <-  function(Operator=59, Time=0.5, ID=''){
       mutate(time_utc = ymd_hms(time_utc, tz = "UTC"),
              `Time (Chile)` = with_tz(time_utc, tzone = "America/Santiago"))
 
-    if(ncol(estacion_df_) ==6){
+    if(ncol(app_data$df_) ==6){
 
-      if(grepl('prs', colnames(estacion_df_[2]))){
-        estacion_df <- rbind(estacion_df, estacion_df_)
+      if(grepl('prs', colnames(app_data$df_[2]))){
+        app_data$df <- rbind(app_data$df, app_data$df_)
       }
 
     }
 
   }
+  if(!ID ==''){
+    if(plot){
+      SLM_plot<- app_data$df %>%
+        dplyr::rename(Fecha = 6) %>%
+        tidyr::gather(key=var, value=value, -time_utc, -Estacion, -Codigo, -Fecha)
+
+      SLM_plot$var <- factor(SLM_plot$var, levels = c("rad_m", "prs_m"))
 
 
-  return(estacion_df)
+      # min_y <- min(SLM_plot$value)
+      # max_y <- max(SLM_plot$value)
+      # interval_size <- (max_y - min_y) / 5 # Example: 5 intervals
+
+
+      app_data$plot<- ggplot(SLM_plot, aes(x=Fecha, y=value, color=var, shape=var)) +
+        ggplot2::geom_point() +
+        ggplot2::scale_color_manual(values=c('#CC0000','#66FF00'))
+
+    }
+
+  }
+
+  return(app_data)
 
 }
 
