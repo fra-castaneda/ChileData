@@ -182,7 +182,31 @@ get_ERDDAP <- function(Var='chlor_a', Dia='01', Mes='08', Año='2019',
 # }
 
 
+iloc_slm <- function(operator=59, Time=0.5){
+  require(dplyr)
+  require(rvest)
+  require(lubridate)
 
+  url <- paste0('https://www.ioc-sealevelmonitoring.org/list.php?order=delay&dir=asc&showall=all&operator=', operator)
+
+
+  estaciones <-read_html(url)
+  estaciones_df <- estaciones %>%
+  html_nodes("table")%>%
+    html_table() %>% .[[7]]%>%
+    .[-(1:2), ] %>% select(1:6|9:10)
+
+
+  colnames(estaciones_df) <-as.character(as.vector(estaciones_df[1,]))
+  estaciones_df = estaciones_df[-1,]
+  estaciones_df <- estaciones_df %>%
+    mutate( url = paste0('https://www.ioc-sealevelmonitoring.org/bgraph.php?code=',Code,'&output=tab&period=', Time))
+
+
+
+  return(estaciones_df)
+
+}
 
 
 SeaLevel <-  function(urls){
@@ -192,6 +216,9 @@ SeaLevel <-  function(urls){
   require(stringr)
 
   estacion_df <- tibble()
+
+
+
   for (url in urls){
 
     estacion <-read_html(url)
@@ -209,7 +236,16 @@ SeaLevel <-  function(urls){
     mutate(time_utc = ymd_hms(time_utc, tz = "UTC"),
            `Time (Chile)` = with_tz(time_utc, tzone = "America/Santiago"))
 
-    estacion_df <- rbind(estacion_df, estacion_df_)
+    if(ncol(estacion_df_) ==6){
+
+      if(grepl('prs', colnames(estacion_df_[2]))){
+        estacion_df <- rbind(estacion_df, estacion_df_)
+      }
+
+
+
+
+    }
 
   }
 
